@@ -6,14 +6,17 @@ export default () => ({
 
   mailer: {
     email: process.env.EMAIL_USER,
-    password : process.env.PASSWORD_USER
+    password : process.env.PASSWORD_USER,
+    port: process.env.MAILER_PORT,
+    host: process.env.MAILER_HOST
   },
 
   cache: {
     url: process.env.REDIS_URL,
-    cloudName: process.env.CLOUD_NAME,
-    apiKey: process.env.API_KEY,
-    apiSecret: process.env.API_SECRET,
-    appName: process.env.APP_NAME
+   
+  },
+
+  jwt: {
+    accessSecret: process.env.ACCESS_TOKEN_SECRET
   }
 });
