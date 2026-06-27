@@ -1,15 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, UsePipes, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDTO, SignUpDTO } from './dto/auth.dto';
+import { LoginDTO, ReSendDTO, SignUpDTO, VerifyAccountDTO } from './dto/auth.dto';
 
 
 @Controller('auth')
+  @UsePipes( ValidationPipe)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')//localHost/auth/signup
-  signUp(@Body() signupDto: SignUpDTO) {
-    return this.authService.signUp(signupDto);
+
+ async signUp(@Body() signupDto: SignUpDTO) {
+
+    const user = await this.authService.signUp(signupDto);
+    return {
+      message:'OTP sent to your email valid for 5 minutes, Check your inbox',
+      success:true,
+      data:{user}
+    }
   }
 
     @Post('login')//localHost/auth/signup
@@ -22,6 +30,29 @@ export class AuthController {
       success:true,
       data: Token
      }
+  }
+
+
+  @Post('verify-account')
+  async verifyAccount(@Body() verifyAccountDTO:VerifyAccountDTO){
+
+   await this.authService.verifyAccount(verifyAccountDTO)
+
+   return {
+    message:"Email verified successfully",
+    success:true
+   }
+  }
+
+    @Post('re-send')
+ async reSend(@Body() reSendDto: ReSendDTO) {
+
+   await this.authService.reSendOTP(reSendDto);
+    return {
+      message:'OTP sent to your email valid for 5 minutes, Check your inbox',
+      success:true,
+      
+    }
   }
 
 

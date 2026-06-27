@@ -1,5 +1,5 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { LoginDTO, SignUpDTO } from './dto/auth.dto';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { LoginDTO, ReSendDTO, SignUpDTO, VerifyAccountDTO } from './dto/auth.dto';
 import { CustomerRepository } from 'src/models/customer/customer.repository';
 import { JwtService } from '@nestjs/jwt';
 import type { Cache } from 'cache-manager';
@@ -23,18 +23,17 @@ export class AuthService {
 
    if(userExist) throw new ConflictException("Email already exist")
 
+   const cachedUser =  await this.cacheManager.get(signUpDto.email)
+
+   if(cachedUser) throw new BadRequestException("Email already signed go verify your account, check you inbox for OTP")
+
     const OTP = this.otpService.generateOTp()
-
-    await this.cacheManager.set('debug-key', 'hello', 86400);
-
-const val = await this.cacheManager.get('debug-key');
-console.log('CACHE VALUE:', val);
 
     // send otp 
    await this.mailService.sendEmail(signUpDto.email,"Confirm Email",`<p>your OTP: ${OTP}</p>`)
-   await this.cacheManager.set(`${signUpDto.email}:OTP`,OTP,300)
+   await this.cacheManager.set(`${signUpDto.email}:OTP`,OTP,5*60*1000)
     // store in cache
-    return await this.cacheManager.set(signUpDto.email,signUpDto,300)
+    return await this.cacheManager.set(signUpDto.email,signUpDto,60*60*1000)
     // await this.customerRepo.create(signUpDto)
   }
 
@@ -54,8 +53,42 @@ console.log('CACHE VALUE:', val);
   return {accessToken,refreshToken}
 
   }
-
   
+  async verifyAccount(verifyAccountDTO:VerifyAccountDTO){
+
+  const cachedUser =  await this.cacheManager.get(verifyAccountDTO.email)
+
+  if(!cachedUser) throw new NotFoundException('email not found go signUp')
+
+    const cachedOTP = await this.cacheManager.get(`${verifyAccountDTO.email}:OTP`)
+
+    if(!cachedOTP || verifyAccountDTO.OTP != cachedOTP) throw new ConflictException("Invalid OTP")
+
+      await this.customerRepo.create(cachedUser)
+
+      this.cacheManager.del(verifyAccountDTO.email)
+      this.cacheManager.del(`${verifyAccountDTO.email}:OTP`)
+  }
+
+  async reSendOTP(reSendOTP:ReSendDTO){
+
+  const cachedUser = await this.cacheManager.get(reSendOTP.email)
+
+    if(!cachedUser) throw new NotFoundException('email not found go signUp')
+
+    const cachedOTP = await this.cacheManager.get(`${reSendOTP.email}:OTP`)
+
+    if(cachedOTP) throw new UnauthorizedException("Your OTP still Valid")
+
+       const OTP = this.otpService.generateOTp()
+
+      await this.cacheManager.set(`${reSendOTP.email}:OTP`,OTP,5*60*1000)
+
+      return true
+
+  }
+
+
 
 
 }

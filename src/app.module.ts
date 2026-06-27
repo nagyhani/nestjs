@@ -8,7 +8,11 @@ import { UserMongoModule } from './shared/user-mongo.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-ioredis'
+import { redisStore } from 'cache-manager-redis-store';
+import KeyvRedis, { Keyv } from '@keyv/redis';
+import { KeyvCacheableMemory } from 'cacheable';
+
+
 
 
 @Module({
@@ -21,12 +25,16 @@ import * as redisStore from 'cache-manager-ioredis'
     inject:[ConfigService]
   }),CacheModule.registerAsync({
      imports:[ConfigModule],
-    useFactory: (configService:ConfigService)=>{
-      
-    return {
-        store: redisStore.create,
-     url:configService.get('cache').url,
-      ttl: 300,
+    useFactory: async (configService:ConfigService)=>{
+
+      return {
+        stores:[
+          new Keyv({
+            store: new KeyvCacheableMemory({ttl:60000,lruSize:5000 })
+          }),
+
+          new KeyvRedis(configService.get('cache').url)
+        ]
       }
      
     },isGlobal:true,
