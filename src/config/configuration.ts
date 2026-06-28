@@ -18,5 +18,12 @@ export default () => ({
 
   jwt: {
     accessSecret: process.env.ACCESS_TOKEN_SECRET
+  },
+
+  uploader:{
+    cloudName: process.env.CLOUD_NAME,
+    apiKey: process.env.API_KEY,
+    apiSecret: process.env.API_SECRET,
+    appName: process.env.APP_NAME
   }
 });

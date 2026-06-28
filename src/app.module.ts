@@ -11,6 +11,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-store';
 import KeyvRedis, { Keyv } from '@keyv/redis';
 import { KeyvCacheableMemory } from 'cacheable';
+import { FileUploadModule } from './shared/file-upload/file-uplaod.module';
 
 
 
@@ -40,7 +41,7 @@ import { KeyvCacheableMemory } from 'cacheable';
     },isGlobal:true,
     inject:[ConfigService]
     
-  }),UserMongoModule, AuthModule, UserModule],
+  }),UserMongoModule, AuthModule, UserModule,FileUploadModule],
   controllers: [AppController],
   providers: [AppService],
   
